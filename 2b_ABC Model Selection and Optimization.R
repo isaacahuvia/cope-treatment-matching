@@ -1,56 +1,28 @@
-#################
-##  Data Prep  ##
-#################
+########################################
+##  Model Selection and Optimization  ##
+##            ABC Project             ##
+########################################
 
 ####  Startup  ####
 library(tidyverse)
 library(tidymodels)
-library(readr)
+library(doParallel)
+library(tictoc)
 
 set.seed(53288)
+
+rm(list = ls())
 
 
 
 ####  Load Data  ####
-raw <- read_csv("S:\\COPE\\Data\\cleaned_cope_data.csv")
-config <- read_csv("S:\\COPE\\Code\\cope-treatment-matching\\config.csv") %>%
-  mutate(across(matches("model$"), as.logical)) %>%
-  drop_na()
+abc_data <- readRDS("S:\\COPE\\Data\\Prediction\\ABC Project Model-Ready.rds")
 
 
 
-####  Prepare Data  ####
-## Clean raw data
-df <- raw %>%
-  # Select variables
-  select(condition, 
-         all_of(config$variable),
-         f1_cdi_mean) %>%
-  # Recode variables
-  mutate(condition = case_when(
-    condition == 0 ~ "Placebo",
-    condition == 1 ~ "Project Personality",
-    condition == 2 ~ "ABC Project"
-  )) %>%
-  # Calculate RTI
-  mutate(rti = f1_cdi_mean - b_cdi_mean) %>%
-  select(-f1_cdi_mean) %>%
-  drop_na(rti)
-
-pp <- df %>% 
-  filter(condition == "Project Personality")
-
-abc <- df %>%
-  filter(condition == "ABC Project")
-
-
+####  Modeling  ####
 ## Split training and test sets
-pp_split <- initial_split(pp, prop = 3/4)
-abc_split <- initial_split(abc, prop = 3/4)
-
-pp_train <- training(pp_split)
-pp_test <- testing(pp_split)
-
+abc_split <- initial_split(abc_data, prop = 3/4)
 abc_train <- training(abc_split)
 abc_test <- testing(abc_split)
 
@@ -59,17 +31,17 @@ abc_test <- testing(abc_split)
 ####  Create workflow sets  ####
 ## Create recipes
 # With one-hot encoding
-pp_recipe_one_hot <-
-  recipe(rti ~ ., data = pp_train) %>%
+abc_recipe_one_hot <-
+  recipe(rti ~ ., data = abc_train) %>%
   update_role(condition, new_role = "group") %>%
-  step_dummy(all_nominal_predictors(), one_hot = TRUE) %>%
-  step_nzv(all_predictors()) %>% 
+  step_dummy(all_nominal_predictors(), one_hot = TRUE) %>% #tune() instead?
+  step_nzv(all_predictors()) %>% #Tune with freq_cut(), unique_cut()?
   step_normalize(all_predictors()) %>% 
   step_impute_knn(all_predictors())
 
 # Without one-hot encoding
-pp_recipe_none_hot <-
-  recipe(rti ~ ., data = pp_train) %>%
+abc_recipe_none_hot <-
+  recipe(rti ~ ., data = abc_train) %>%
   update_role(condition, new_role = "group") %>%
   step_dummy(all_nominal_predictors(), one_hot = FALSE) %>%
   step_nzv(all_predictors()) %>% 
@@ -78,19 +50,18 @@ pp_recipe_none_hot <-
 
 
 ## Create models
-model_xg <- boost_tree() %>% 
-  set_mode("regression") %>%
-  set_engine("xgboost")
-
+# Random forest
 model_rf <- rand_forest(mtry = tune(), trees = tune(), min_n = tune()) %>% 
   set_mode("regression") %>%
   set_engine("randomForest")
 
-model_mix <- linear_reg(penalty = tune(), mixture = tune()) %>%
+# Regularized least squares
+model_rls <- linear_reg(penalty = tune(), mixture = tune()) %>%
   set_mode("regression") %>%
   set_engine("glmnet")
 
-model_lm <- linear_reg() %>%
+# OLS linear regression
+model_ols <- linear_reg() %>%
   set_engine("lm") %>%
   set_mode("regression")
 
@@ -99,61 +70,65 @@ model_lm <- linear_reg() %>%
 set <- 
   workflow_set(
     preproc = list(
-      basic = pp_recipe_none_hot, 
-      one_hot = pp_recipe_one_hot
-      ),
+      one_hot = abc_recipe_one_hot,
+      none_hot = abc_recipe_none_hot
+    ),
     models = list(
-      xgboost = model_xg,
-      randForest = model_rf,
-      mixture = model_mix,
-      OLS = model_lm
-      ),
+      random_forest = model_rf,
+      regularized_least_squares = model_rls,
+      ordinary_least_squares = model_ols
+    ),
     cross = TRUE
   )
 
 
 ## Create resampling methods
-folds <- vfold_cv(pp_train, v = 10)
-save <- control_resamples(save_pred = T)
+resampling_method <- vfold_cv(abc_train, v = 10)
+save_predictions <- control_resamples(save_pred = T)
 
 
-## Try them out!
-out <- 
-  set %>% 
-  # The first argument is a function name from the {{tune}} package
-  # such as `tune_grid()`, `fit_resamples()`, etc.
-  workflow_map("tune_grid", resamples = folds, control = save, grid = 5, 
-               metrics = metric_set(rmse), verbose = TRUE)
+## Test and rank workflows
+# Using parallel processing
+tic()
+cores <- detectCores(logical = F)
+cluster <- makeCluster(cores)
+registerDoParallel(cluster)
+clusterEvalQ(cluster, {library(tidymodels)})
 
-rank_results(out, rank_metric = "rmse")
+out <- set %>% 
+  workflow_map(
+    "tune_grid", 
+    resamples = resampling_method, 
+    control = save_predictions, 
+    grid = 5, 
+    metrics = metric_set(rmse), 
+    verbose = TRUE
+  )
+
+stopCluster(cluster)
+toc()
+
+ranking <- rank_results(out, rank_metric = "rmse")
+ranking
 
 autoplot(out)
-autoplot(out, id = "one_hot_mixture", metric = "rmse")
-
-collect_predictions(out, summarize = T) #see also select_best, metric
+autoplot(out, id = ranking$wflow_id[1], metric = "rmse")
 
 
 ## Only the best
-best_parameters <- 
-  out %>% 
-  extract_workflow_set_result("one_hot_mixture") %>% 
+best_parameters <- out %>% 
+  extract_workflow_set_result(ranking$wflow_id[1]) %>% 
   select_best(metric = "rmse")
 best_parameters
 
-best <-
+best_workflow <-
   out %>%
-  extract_workflow("one_hot_mixture") %>%
+  extract_workflow(ranking$wflow_id[1]) %>%
   finalize_workflow(best_parameters)
 
-pp_test_with_predictions <- best %>%
-  fit(pp_train) %>%
-  augment(pp_test)
 
 
-## TO DO: 
-# Split into the following files:
-# 1. Data Pre-processing (common to both intervention groups)
-# 2. Project Personality model identification and optimization
-# 3. ABC Project model identification and optimization
-# 4. Predicting RTI for both interventions' test sets with both models
-# 5. Analysis!
+####  Save  ####
+saveRDS(abc_train, file = "S:\\COPE\\Data\\Prediction\\ABC Project Train Set.rds")
+saveRDS(abc_test, file = "S:\\COPE\\Data\\Prediction\\ABC Project Test Set.rds")
+saveRDS(best_workflow, "S:\\COPE\\Data\\Prediction\\Optimized ABC Project Workflow.rds")
