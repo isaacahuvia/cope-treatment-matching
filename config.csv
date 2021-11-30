@@ -1,0 +1,68 @@
+category,variable,main ML model,alternate ML model,regression model
+demographics,b_dem_sex,T,T,T
+demographics,b_dem_gender_agender,T,T,F
+demographics,b_dem_gender_not_sure,T,T,F
+demographics,b_dem_gender_other_please_specify,T,T,F
+demographics,b_dem_gender_androgynous,T,T,F
+demographics,b_dem_gender_nonbinary,T,T,F
+demographics,b_dem_gender_two_spirited,T,T,F
+demographics,b_dem_gender_female_to_male_transgender_ftm,T,T,F
+demographics,b_dem_gender_trans_female_trans_feminine,T,T,F
+demographics,b_dem_gender_trans_male_trans_masculine,T,T,F
+demographics,b_dem_gender_gender_expansive,T,T,F
+demographics,b_dem_gender_third_gender,T,T,F
+demographics,b_dem_gender_genderqueer,T,T,F
+demographics,b_dem_gender_male_to_female_transgender_mtf,T,T,F
+demographics,b_dem_gender_man_boy,T,T,T
+demographics,b_dem_gender_transgender,T,T,F
+demographics,b_dem_gender_woman_girl,T,T,T
+demographics,b_dem_gender_na,T,T,F
+demographics,b_dem_orientation,T,T,T
+demographics,b_dem_race_american_indian_or_alaska_native,T,T,T
+demographics,b_dem_race_asian_including_asian_desi,T,T,T
+demographics,b_dem_race_hispanic_latinx,T,T,T
+demographics,b_dem_race_native_hawaiian_or_other_pacific_islander,T,T,T
+demographics,b_dem_race_white_caucasian_non_hispanic_includes_middle_eastern,T,T,T
+demographics,b_dem_race_black_african_american,T,T,T
+demographics,b_dem_race_other_specify,T,T,T
+demographics,b_dem_race_prefer_not_to_answer,T,T,T
+demographics,b_dem_race_na,T,T,T
+demographics,b_dem_language,T,T,F
+demographics,b_dem_grade,T,T,T
+depression,b_cdi_mean,T,T,T
+depression,b_cdi_1,F,T,F
+depression,b_cdi_2,F,T,F
+depression,b_cdi_3,F,T,F
+depression,b_cdi_4,F,T,F
+depression,b_cdi_5,F,T,F
+depression,b_cdi_6,F,T,F
+depression,b_cdi_7,F,T,F
+depression,b_cdi_8,F,T,F
+depression,b_cdi_9,F,T,F
+depression,b_cdi_10,F,T,F
+depression,b_cdi_11,F,T,F
+depression,b_cdi_12,F,T,F
+anxiety,b_gad_mean,T,T,T
+anxiety,b_gad_1,F,T,F
+anxiety,b_gad_2,F,T,F
+anxiety,b_gad_3,F,T,F
+anxiety,b_gad_4,F,T,F
+anxiety,b_gad_5,F,T,F
+anxiety,b_gad_6,F,T,F
+anxiety,b_gad_7,F,T,F
+perceived control,b_shs_mean,T,T,T
+hopelessness,b_bhs_mean,T,T,T
+self-injury,TBD,TBD,TBD,TBD
+behavioral activation,b_bads_mean,T,T,T
+implicit personality theory,b_iptq_mean,T,T,T
+perceived social status,b_macarthur_us,T,T,T
+perceived social status,b_macarthur_school,T,T,T
+peer victimization,b_mvps_mean,T,T,T
+loneliness,b_uls_mean,T,T,T
+self-referential encoding,TBD,TBD,TBD,TBD
+discrimination,TBD,TBD,TBD,TBD
+covid stressors,TBD,TBD,TBD,TBD
+covid trauma,TBD,TBD,TBD,TBD
+disordered eating,b_drs_mean,T,T,T
+adverse childhood experiences,b_aces_mean,T,T,T
+drug use,TBD,TBD,TBD,TBD
