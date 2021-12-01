@@ -4,6 +4,7 @@
 
 ####  Startup  ####
 library(tidyverse)
+library(ggpubr)
 
 rm(list = ls())
 
@@ -16,12 +17,13 @@ df <- readRDS(file = "S:\\COPE\\Data\\Prediction\\Analysis-Ready.rds")
 
 ####  Analysis  ####
 ## Set luck threshold (in SDs)
-luck_threshold = .5
+luck_threshold = 0
 
 ## Create new variables
+# RTI is already in SD units, per 1_Data Preparation.R
 df <- df %>%
-  mutate(preference_pp = (rti_pred_pp - rti_pred_abc) / sd(rti_actual),
-         preference_abc = (rti_pred_abc - rti_pred_pp) / sd(rti_actual),
+  mutate(preference_pp = rti_pred_pp - rti_pred_abc,
+         preference_abc = rti_pred_abc - rti_pred_pp,
          preferred_condition = case_when(
            preference_pp > luck_threshold ~ "Project Personality",
            preference_abc > luck_threshold ~ "ABC Project",
@@ -34,13 +36,48 @@ df <- df %>%
          ))
 
 df %>%
+  filter(condition != "Control") %>%
   select(condition, matches("^rti"), matches("^pref"), luck) %>%
   group_by(luck) %>%
   summarize(n = n(),
             rti = mean(rti_actual))
 
+## Tests
+temp <- df %>%
+  filter(luck %in% c("Lucky", "Unlucky")) %>%
+  select(rti_actual, luck)
+t.test(temp$rti_actual ~ temp$luck)  
+
 ## Visualize RTI predictions
 df %>%
+  filter(condition == "Project Personality") %>%
+  pivot_longer(matches("^rti_pred")) %>%
+  ggplot(aes(rti_actual, value)) +
+    geom_point() +
+    stat_cor() +
+    facet_wrap(~ name) +
+    ggtitle("Correlations Between Predicted RTI and Actual RTI",
+            "Project Personality Participants Only")
+
+df %>%
+  filter(condition == "ABC Project") %>%
+  pivot_longer(matches("^rti_pred")) %>%
+  ggplot(aes(rti_actual, value)) +
+    geom_point() +
+    stat_cor() +
+    facet_wrap(~ name) +
+    ggtitle("Correlations Between Predicted RTI and Actual RTI",
+            "ABC Project Participants Only")
+
+df %>%
+  filter(condition != "Control") %>%
+  ggplot(aes(rti_pred_abc, rti_pred_pp)) +
+    geom_point() +
+    stat_cor() +
+    ggtitle("Correlation Between Predicted RTI in Both Groups")
+
+df %>%
+  filter(condition != "Control") %>%
   group_by(condition) %>%
   arrange(condition, -rti_actual) %>%
   mutate(participant = row_number(),
@@ -61,7 +98,7 @@ df %>%
                      color = preferred_condition)) +
     scale_color_discrete(name = NULL) +
     scale_x_continuous(name = NULL) +
-    scale_y_continuous(name = "RTI") +
+    scale_y_continuous(name = "RTI", breaks = -4:2) +
     coord_flip() +
     facet_wrap(~ condition) +
     theme_minimal() +
@@ -70,5 +107,3 @@ df %>%
           panel.grid.major.y = element_blank(),
           panel.grid.minor.y = element_blank(),
           legend.position = "top")
-
-

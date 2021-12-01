@@ -16,6 +16,8 @@ pp_test <- readRDS(file = "S:\\COPE\\Data\\Prediction\\Project Personality Test 
 abc_train <- readRDS(file = "S:\\COPE\\Data\\Prediction\\ABC Project Train Set.rds")
 abc_test <- readRDS(file = "S:\\COPE\\Data\\Prediction\\ABC Project Test Set.rds")
 
+control <- readRDS("S:\\COPE\\Data\\Prediction\\Control Data.rds")
+
 pp_workflow <- readRDS("S:\\COPE\\Data\\Prediction\\Optimized Project Personality Workflow.rds")
 abc_workflow <- readRDS("S:\\COPE\\Data\\Prediction\\Optimized ABC Project Workflow.rds")
 
@@ -53,7 +55,13 @@ abc_to_combine <- abc_test %>%
   mutate(rti_pred_pp = abc_test_pp_pred,
          rti_pred_abc = abc_test_abc_pred)
 
-df <- rbind(pp_to_combine, abc_to_combine)
+control_to_combine <- control %>%
+  rename(rti_actual = rti) %>%
+  mutate(rti_pred_pp = NA,
+         rti_pred_abc = NA)
+
+df <- bind_rows(pp_to_combine, abc_to_combine, control_to_combine)
+
 
 
 

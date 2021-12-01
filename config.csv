@@ -1,4 +1,4 @@
-category,variable,main ML model,alternate ML model,regression model
+category,variable,feature set 1,feature set 2,feature set 3
 demographics,b_dem_sex,T,T,T
 demographics,b_dem_gender_agender,T,T,F
 demographics,b_dem_gender_not_sure,T,T,F
