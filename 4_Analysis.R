@@ -17,7 +17,7 @@ df <- readRDS(file = "S:\\COPE\\Data\\Prediction\\Analysis-Ready.rds")
 
 ####  Analysis  ####
 ## Set luck threshold (in SDs)
-luck_threshold = 0
+luck_threshold = .5
 
 ## Create new variables
 # RTI is already in SD units, per 1_Data Preparation.R
@@ -29,24 +29,42 @@ df <- df %>%
            preference_abc > luck_threshold ~ "ABC Project",
            TRUE ~ "No Preference"
          ),
+         preferred_condition_force = case_when(
+           preference_pp > 0 ~ "Project Personality",
+           preference_abc > 0 ~ "ABC Project",
+           TRUE ~ "No Preference"
+         ),
          luck = case_when(
            preferred_condition != "No Preference" & preferred_condition == condition ~ "Lucky",
            preferred_condition != "No Preference" & preferred_condition != condition ~ "Unlucky",
            preferred_condition == "No Preference" ~ "No Luck"
+         ),
+         luck_force = case_when(
+           preferred_condition_force != "No Preference" & preferred_condition_force == condition ~ "Lucky",
+           preferred_condition_force != "No Preference" & preferred_condition_force != condition ~ "Unlucky",
+           preferred_condition_force == "No Preference" ~ "No Luck"
          ))
 
 df %>%
   filter(condition != "Control") %>%
-  select(condition, matches("^rti"), matches("^pref"), luck) %>%
   group_by(luck) %>%
+  summarize(n = n(),
+            rti = mean(rti_actual))
+
+df %>%
+  filter(condition != "Control") %>%
+  group_by(luck_force) %>%
   summarize(n = n(),
             rti = mean(rti_actual))
 
 ## Tests
 temp <- df %>%
-  filter(luck %in% c("Lucky", "Unlucky")) %>%
-  select(rti_actual, luck)
-t.test(temp$rti_actual ~ temp$luck)  
+  filter(luck %in% c("Lucky", "Unlucky"))
+t.test(temp$rti_actual ~ temp$luck)
+
+temp <- df %>%
+  filter(luck_force %in% c("Lucky", "Unlucky"))
+t.test(temp$rti_actual ~ temp$luck_force)  
 
 ## Visualize RTI predictions
 df %>%

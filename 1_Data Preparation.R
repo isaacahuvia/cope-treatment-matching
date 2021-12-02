@@ -33,7 +33,9 @@ df <- raw %>%
   )) %>%
   # Calculate RTI
   drop_na(b_cdi_mean, f1_cdi_mean) %>%
+  group_by(condition) %>%
   mutate(rti = (f1_cdi_mean - b_cdi_mean) / sd(b_cdi_mean)) %>%
+  ungroup() %>%
   select(-f1_cdi_mean)
 
 pp <- df %>% 
