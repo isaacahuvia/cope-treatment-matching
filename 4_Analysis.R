@@ -61,12 +61,21 @@ df %>%
 temp <- df %>%
   filter(luck %in% c("Lucky", "Unlucky"))
 t.test(temp$rti_actual ~ temp$luck)
+shapiro.test(temp$rti_actual)
 
 temp <- df %>%
   filter(luck_force %in% c("Lucky", "Unlucky"))
 t.test(temp$rti_actual ~ temp$luck_force)  
+shapiro.test(temp$rti_actual)
 
 ## Visualize RTI predictions
+df %>%
+  filter(condition != "Control") %>%
+  pivot_longer(matches("^rti")) %>%
+  ggplot(aes(value)) +
+    geom_density() +
+    facet_wrap( ~ name)
+
 df %>%
   filter(condition == "Project Personality") %>%
   pivot_longer(matches("^rti_pred")) %>%
@@ -105,23 +114,31 @@ df %>%
          preferred_rti = case_when(
            rti_pred_pp < rti_pred_abc ~ rti_pred_pp,
            rti_pred_abc < rti_pred_pp ~ rti_pred_abc),
+         other_condition = case_when(
+           rti_pred_pp < rti_pred_abc ~ "ABC Project",
+           rti_pred_abc < rti_pred_pp ~ "Project Personality"),
+         other_rti = case_when(
+           rti_pred_pp < rti_pred_abc ~ rti_pred_abc,
+           rti_pred_abc < rti_pred_pp ~ rti_pred_pp)
          ) %>%
   ungroup() %>%
-  select(participant, condition, matches("^preferred"), matches("^rti")) %>%
   ggplot() +
     geom_point(aes(participant, rti_actual), color = "#F9B650") +
     geom_point(aes(participant, preferred_rti, color = preferred_condition)) +
+    geom_point(aes(participant, other_rti, color = other_condition)) +
     geom_segment(aes(x = participant, xend = participant, 
                      y = rti_pred_abc, yend = rti_pred_pp,
                      color = preferred_condition)) +
     scale_color_discrete(name = NULL) +
     scale_x_continuous(name = NULL) +
-    scale_y_continuous(name = "RTI", breaks = -4:2) +
+    scale_y_reverse(name = "RTI (Lower is Better)", breaks = -4:2) +
     coord_flip() +
     facet_wrap(~ condition) +
+    ggtitle("Actual and Predicted RTI, by Condition") +
     theme_minimal() +
     theme(axis.ticks.y = element_blank(),
           axis.text.y = element_blank(),
           panel.grid.major.y = element_blank(),
           panel.grid.minor.y = element_blank(),
-          legend.position = "top")
+          legend.position = "top",
+          plot.title = element_text(hjust = .5))

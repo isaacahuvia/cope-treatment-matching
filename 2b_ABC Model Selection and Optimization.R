@@ -106,11 +106,6 @@ model_ols <- linear_reg() %>%
   set_engine("lm") %>%
   set_mode("regression")
 
-# XG boost
-model_xg <- boost_tree() %>%
-  set_engine("xgboost") %>%
-  set_mode("regression")
-
 # K-nearest neighbors
 model_knn <- nearest_neighbor() %>%
   set_engine("kknn") %>%
@@ -130,7 +125,6 @@ set <-
       RF = model_rf,
       RLS = model_rls,
       OLS = model_ols,
-      XG = model_xg,
       KNN = model_knn
     ),
     cross = TRUE
