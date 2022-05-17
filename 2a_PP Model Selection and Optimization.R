@@ -141,9 +141,8 @@ clusterEvalQ(cluster, {library(tidymodels)})
 
 out <- set %>% 
   workflow_map(
-    "tune_grid", 
+    "tune_bayes", 
     resamples = vfold_cv(pp_train, v = 10), 
-    grid = 10, 
     metrics = metric_set(rmse, rsq), 
     verbose = TRUE
   )

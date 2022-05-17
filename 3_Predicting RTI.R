@@ -25,11 +25,11 @@ abc_workflow <- readRDS("S:\\COPE\\Data\\Prediction\\Optimized ABC Project Workf
 
 
 ####  Prepare Data  ####
-## Fit and test assumptions
-pp_fit <- pp_workflow %>%
+## Fit and test assumptions: Project Personality model with Project Personality training set
+pp_model <- pp_workflow %>%
   fit(pp_train)
 
-pp_diagnostics <- pp_fit %>%
+pp_diagnostics <- pp_model %>%
   augment(pp_train) %>%
   mutate(resid = .pred - rti) 
 
@@ -47,10 +47,12 @@ pp_diagnostics %>%
     geom_qq_line(aes(sample = resid)) +
     ggtitle("QQ Plot of Residuals for Project Personality")
 
-abc_fit <- abc_workflow %>%
+
+## Fit and test assumptions: ABC model with ABC training set
+abc_model <- abc_workflow %>%
   fit(abc_train)
 
-abc_diagnostics <- abc_fit %>%
+abc_diagnostics <- abc_model %>%
   augment(abc_train) %>%
   mutate(resid = .pred - rti) 
 
@@ -69,18 +71,18 @@ abc_diagnostics %>%
     ggtitle("QQ Plot of Residuals for the ABC Project")
 
 
-## Pull predictions
-pp_test_pp_pred <- pp_fit %>%
+## Use models to make predictions in test sets
+pp_model_predicts_pp <- pp_model %>%
   predict(pp_test) %>%
   pull(.pred)
-pp_test_abc_pred <- abc_fit %>%
+abc_model_predicts_pp <- abc_model %>%
   predict(pp_test) %>%
   pull(.pred)
 
-abc_test_pp_pred <- pp_fit %>%
+pp_model_predicts_abc <- pp_model %>%
   predict(abc_test) %>%
   pull(.pred)
-abc_test_abc_pred <- abc_fit %>%
+abc_model_predicts_abc <- abc_model %>%
   predict(abc_test) %>%
   pull(.pred)
 
@@ -88,60 +90,15 @@ abc_test_abc_pred <- abc_fit %>%
 ## Combine data and predictions into one dataset
 pp_to_combine <- pp_test %>%
   rename(rti_actual = rti) %>%
-  mutate(rti_pred_pp = pp_test_pp_pred,
-         rti_pred_abc = pp_test_abc_pred)
+  mutate(rti_pred_pp = pp_model_predicts_pp,
+         rti_pred_abc = abc_model_predicts_pp)
 
 abc_to_combine <- abc_test %>%
   rename(rti_actual = rti) %>%
-  mutate(rti_pred_pp = abc_test_pp_pred,
-         rti_pred_abc = abc_test_abc_pred)
+  mutate(rti_pred_pp = pp_model_predicts_abc,
+         rti_pred_abc = abc_model_predicts_abc)
 
-control_to_combine <- control %>%
-  rename(rti_actual = rti) %>%
-  mutate(rti_pred_pp = NA,
-         rti_pred_abc = NA)
-
-df <- bind_rows(pp_to_combine, abc_to_combine, control_to_combine)
-
-
-
-
-####  Save  ####
-saveRDS(df, file = "S:\\COPE\\Data\\Prediction\\Analysis-Ready.rds")
-
-pp_test_abc_pred <- abc_workflow %>%
-  fit(abc_train) %>%
-  predict(pp_test) %>%
-  pull(.pred)
-
-abc_test_pp_pred <- pp_workflow %>%
-  fit(pp_train) %>%
-  predict(abc_test) %>%
-  pull(.pred)
-abc_test_abc_pred <- abc_workflow %>%
-  fit(abc_train) %>%
-  predict(abc_test) %>%
-  pull(.pred)
-
-
-## Combine data and predictions into one dataset
-pp_to_combine <- pp_test %>%
-  rename(rti_actual = rti) %>%
-  mutate(rti_pred_pp = pp_test_pp_pred,
-         rti_pred_abc = pp_test_abc_pred)
-
-abc_to_combine <- abc_test %>%
-  rename(rti_actual = rti) %>%
-  mutate(rti_pred_pp = abc_test_pp_pred,
-         rti_pred_abc = abc_test_abc_pred)
-
-control_to_combine <- control %>%
-  rename(rti_actual = rti) %>%
-  mutate(rti_pred_pp = NA,
-         rti_pred_abc = NA)
-
-df <- bind_rows(pp_to_combine, abc_to_combine, control_to_combine)
-
+df <- bind_rows(pp_to_combine, abc_to_combine)
 
 
 

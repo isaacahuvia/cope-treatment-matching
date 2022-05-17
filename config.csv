@@ -52,17 +52,21 @@ anxiety,b_gad_6,F,T,F
 anxiety,b_gad_7,F,T,F
 perceived control,b_shs_mean,T,T,T
 hopelessness,b_bhs_mean,T,T,T
-self-injury,TBD,TBD,TBD,TBD
+self-injury,b_sitbi_2,T,T,T
+self-injury,b_sitbi_8,T,T,T
 behavioral activation,b_bads_mean,T,T,T
 implicit personality theory,b_iptq_mean,T,T,T
 perceived social status,b_macarthur_us,T,T,T
 perceived social status,b_macarthur_school,T,T,T
 peer victimization,b_mvps_mean,T,T,T
 loneliness,b_uls_mean,T,T,T
-self-referential encoding,TBD,TBD,TBD,TBD
-discrimination,TBD,TBD,TBD,TBD
-covid stressors,TBD,TBD,TBD,TBD
-covid trauma,TBD,TBD,TBD,TBD
+covid,b_covid_spread,T,T,T
+covid,b_covid_distance,T,T,T
+covid,b_covid_stress,T,T,T
+covid,b_covid_access_lost,T,T,T
+covid,b_covid_support,T,T,T
 disordered eating,b_drs_mean,T,T,T
 adverse childhood experiences,b_aces_mean,T,T,T
-drug use,TBD,TBD,TBD,TBD
+drug use,b_bstad_me_smoke,T,T,T
+drug use,b_bstad_me_drink,T,T,T
+drug use,b_bstad_me_other,T,T,T

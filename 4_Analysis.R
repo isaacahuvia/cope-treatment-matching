@@ -46,16 +46,15 @@ df <- df %>%
          ))
 
 df %>%
-  filter(condition != "Control") %>%
   group_by(luck) %>%
   summarize(n = n(),
             rti = mean(rti_actual))
 
 df %>%
-  filter(condition != "Control") %>%
   group_by(luck_force) %>%
   summarize(n = n(),
             rti = mean(rti_actual))
+
 
 ## Tests
 temp <- df %>%
@@ -68,43 +67,39 @@ temp <- df %>%
 t.test(temp$rti_actual ~ temp$luck_force)  
 shapiro.test(temp$rti_actual)
 
+
 ## Visualize RTI predictions
 df %>%
-  filter(condition != "Control") %>%
   pivot_longer(matches("^rti")) %>%
   ggplot(aes(value)) +
     geom_density() +
     facet_wrap( ~ name)
 
 df %>%
-  filter(condition == "Project Personality") %>%
   pivot_longer(matches("^rti_pred")) %>%
+  filter((name == "rti_pred_pp" & condition == "Project Personality") |
+         (name == "rti_pred_abc" & condition == "ABC Project")) %>%
+  mutate(name = case_when(name == "rti_pred_abc" ~ "Action Brings Change Project",
+                          name == "rti_pred_pp" ~ "Project Personality")) %>%
   ggplot(aes(rti_actual, value)) +
     geom_point() +
+    scale_x_continuous(name = "Actual RTI") +
+    scale_y_continuous(name = "Predicted RTI") +
     stat_cor() +
     facet_wrap(~ name) +
-    ggtitle("Correlations Between Predicted RTI and Actual RTI",
-            "Project Personality Participants Only")
+    ggtitle("Correlations Between Predicted RTI and Actual RTI") +
+    theme_classic()
 
 df %>%
-  filter(condition == "ABC Project") %>%
-  pivot_longer(matches("^rti_pred")) %>%
-  ggplot(aes(rti_actual, value)) +
-    geom_point() +
-    stat_cor() +
-    facet_wrap(~ name) +
-    ggtitle("Correlations Between Predicted RTI and Actual RTI",
-            "ABC Project Participants Only")
-
-df %>%
-  filter(condition != "Control") %>%
   ggplot(aes(rti_pred_abc, rti_pred_pp)) +
     geom_point() +
+    scale_x_continuous(name = "Predicted RTI (ABC)") +
+    scale_y_continuous(name = "Predicted RTI (PP)") +
     stat_cor() +
-    ggtitle("Correlation Between Predicted RTI in Both Groups")
+    ggtitle("Correlation Between Predicted RTI in Both Groups") +
+    theme_classic()
 
 df %>%
-  filter(condition != "Control") %>%
   group_by(condition) %>%
   arrange(condition, -rti_actual) %>%
   mutate(participant = row_number(),
