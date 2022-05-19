@@ -44,12 +44,12 @@ pp <- df %>%
 abc <- df %>%
   filter(condition == "ABC Project")
 
-control <- df %>%
-  filter(condition == "Control")
+full_sample <- df %>%
+  filter(condition %in% c("Project Personality", "ABC Project"))
 
 
 
 ####  Save Data  ####
 saveRDS(pp, file = "S:\\COPE\\Data\\Prediction\\Project Personality Model-Ready.rds")
 saveRDS(abc, file = "S:\\COPE\\Data\\Prediction\\ABC Project Model-Ready.rds")
-saveRDS(control, file = "S:\\COPE\\Data\\Prediction\\Control Data.rds")
+saveRDS(full_sample, file = "S:\\COPE\\Data\\Prediction\\Full Sample.rds")

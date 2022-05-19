@@ -1,26 +1,24 @@
-################
-##  Analysis  ##
-################
+---
+title: "4_Analysis"
+output: html_document
+---
 
-####  Startup  ####
+```{r, include = F}
+# Startup
 library(tidyverse)
 library(ggpubr)
+library(scales)
 
 rm(list = ls())
 
-
-
-####  Load Data  ####
+# Load Data
 df <- readRDS(file = "S:\\COPE\\Data\\Prediction\\Analysis-Ready.rds")
 
-
-
-####  Analysis  ####
-## Set luck threshold (in SDs)
+# Prepare Data
+# Set luck threshold (in SDs)
 luck_threshold = .5
 
-## Create new variables
-# RTI is already in SD units, per 1_Data Preparation.R
+# Create new variables (RTI is already in SD units, per 1_Data Preparation.R)
 df <- df %>%
   mutate(preference_pp = rti_pred_pp - rti_pred_abc,
          preference_abc = rti_pred_abc - rti_pred_pp,
@@ -44,37 +42,91 @@ df <- df %>%
            preferred_condition_force != "No Preference" & preferred_condition_force != condition ~ "Unlucky",
            preferred_condition_force == "No Preference" ~ "No Luck"
          ))
+```
 
+## Descriptive Statistics
+
+```{r, echo = F}
+full_sample <- readRDS(file = "S:\\COPE\\Data\\Prediction\\Full Sample.rds")
+
+full_sample %>%
+  select(starts_with("b_dem")) %>%
+  map(~ data.frame(x = .x) %>%
+        count(x) %>%
+        mutate(pct = percent(n / sum(n), .01)))
+
+full_sample %>%
+  summarize(b_cdi_mean_mean = mean(b_cdi_mean),
+            b_cdi_mean_sd = sd(b_cdi_mean))
+
+df %>%
+  group_by(condition) %>%
+  summarize(across(starts_with("rti"), list(mean = mean, sd = sd))) %>%
+  t()
+```
+
+## PAI
+
+```{r, echo = F}
+df %>%
+  rowwise() %>%
+  mutate(preference = min(preference_pp, preference_abc)) %>%
+  ungroup() %>%
+  summarize(preference_mean = mean(preference),
+            preference_sd = sd(preference))
+```
+
+## Inferential Statistics
+
+```{r, echo = F}
 df %>%
   group_by(luck) %>%
   summarize(n = n(),
-            rti = mean(rti_actual))
+            rti_mean = mean(rti_actual),
+            rti_sd = sd(rti_actual))
 
 df %>%
   group_by(luck_force) %>%
   summarize(n = n(),
-            rti = mean(rti_actual))
-
+            rti_mean = mean(rti_actual),
+            rti_sd = sd(rti_actual))
 
 ## Tests
 temp <- df %>%
   filter(luck %in% c("Lucky", "Unlucky"))
-t.test(temp$rti_actual ~ temp$luck)
-shapiro.test(temp$rti_actual)
+# t.test(temp$rti_actual ~ temp$luck)
 
 temp <- df %>%
   filter(luck_force %in% c("Lucky", "Unlucky"))
 t.test(temp$rti_actual ~ temp$luck_force)  
-shapiro.test(temp$rti_actual)
+```
 
+## Visualizations
 
-## Visualize RTI predictions
+```{r, echo = F}
+# Comparison of outcomes
+df %>%
+  group_by(luck_force) %>%
+  summarize(n = n(),
+            rti_mean = mean(rti_actual),
+            rti_sd = sd(rti_actual)) %>%
+  mutate(rti_ci = 1.96 * (rti_sd / sqrt(n))) %>%
+  ggplot() +
+    geom_col(aes(luck_force, rti_mean)) +
+    geom_errorbar(aes(luck_force, ymin = rti_mean - rti_ci, ymax = rti_mean + rti_ci), size = 2, width = .5) +
+    scale_x_discrete(name = NULL) +
+    scale_y_continuous(name = "RTI") +
+    ggtitle("Actual RTI for Lucky and Unlucky Participants", "Means and 95% Confidence Intervals") +
+    theme_classic()
+
+# Distributions of predictions
 df %>%
   pivot_longer(matches("^rti")) %>%
   ggplot(aes(value)) +
     geom_density() +
     facet_wrap( ~ name)
 
+# Correlations between predicted and actual RTI
 df %>%
   pivot_longer(matches("^rti_pred")) %>%
   filter((name == "rti_pred_pp" & condition == "Project Personality") |
@@ -90,6 +142,7 @@ df %>%
     ggtitle("Correlations Between Predicted RTI and Actual RTI") +
     theme_classic()
 
+# Correlation between predicted RTI across groups
 df %>%
   ggplot(aes(rti_pred_abc, rti_pred_pp)) +
     geom_point() +
@@ -99,6 +152,7 @@ df %>%
     ggtitle("Correlation Between Predicted RTI in Both Groups") +
     theme_classic()
 
+# Funky plot
 df %>%
   group_by(condition) %>%
   arrange(condition, -rti_actual) %>%
@@ -137,3 +191,4 @@ df %>%
           panel.grid.minor.y = element_blank(),
           legend.position = "top",
           plot.title = element_text(hjust = .5))
+```
