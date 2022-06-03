@@ -18,6 +18,11 @@ df <- readRDS(file = "S:\\COPE\\Data\\Prediction\\Analysis-Ready.rds")
 # Set luck threshold (in SDs)
 luck_threshold = .5
 
+# Make RTI a *positive* number - higher is *better*
+df <- df %>%
+  mutate(across(starts_with("rti"),
+                ~ - .))
+
 # Create new variables (RTI is already in SD units, per 1_Data Preparation.R)
 df <- df %>%
   mutate(preference_pp = rti_pred_pp - rti_pred_abc,
@@ -70,7 +75,7 @@ df %>%
 ```{r, echo = F}
 df %>%
   rowwise() %>%
-  mutate(preference = min(preference_pp, preference_abc)) %>%
+  mutate(preference = max(preference_pp, preference_abc)) %>%
   ungroup() %>%
   summarize(preference_mean = mean(preference),
             preference_sd = sd(preference))
@@ -135,7 +140,7 @@ df %>%
                           name == "rti_pred_pp" ~ "Project Personality")) %>%
   ggplot(aes(rti_actual, value)) +
     geom_point() +
-    scale_x_continuous(name = "Actual RTI") +
+    scale_x_continuous(name = "Actual RTI", breaks = seq(-2, 4, 2)) +
     scale_y_continuous(name = "Predicted RTI") +
     stat_cor() +
     facet_wrap(~ name) +
